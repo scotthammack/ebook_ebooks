@@ -1,85 +1,104 @@
 #!/usr/local/bin/python
 # coding: utf-8
 
-import random, re
-import pytumblr, json
-from tumblrsecrets import tumblr_auth, database, tumblr_name
+import json
+import pytumblr
+import random
+import re
+
+from tumblr_secrets import TUMBLR_AUTH, DATABASE, TUMBLR_NAME
+
+OUTPUT_LENGTH = 1400
+PARAGRAPH_BREAK_PROB = 0.25
+JUMP_PROB = 0.2
 
 client = pytumblr.TumblrRestClient(
-	tumblr_auth[0], tumblr_auth[1], tumblr_auth[2], tumblr_auth[3]
+	TUMBLR_AUTH[0], TUMBLR_AUTH[1], TUMBLR_AUTH[2], TUMBLR_AUTH[3]
 )
 
-source_file = open(database)
-source = source_file.readlines()
-source_file.close()
 
-corpus = []
+def assemble_corpus(database):
+	source_file = open(database,'r')
+	source = source_file.readlines()
+	source_file.close()
+
+	corpus = []
+
+	for line in source:
+		for word in line.split():
+			corpus.append(word)
+	return corpus
 
 
 def get_start_pos():
-	acceptable = False
-	while not acceptable:
-		pos = random.randint(0, len(corpus)-1)
+	while True:
+		pos = random.randint(0, len(corpus) - 1)
 		if corpus[pos].istitle():
-			acceptable = True
-	return pos
+			return pos
 
 def get_word_pos(target):
 	counter = 0
 	instances = []
+
 	for word in corpus:
 		if word == target:
 			instances.append(counter)
 		counter += 1
+
 	if instances:
 		return random.choice(instances)
 	else:
 		return None
 
-for line in source:
-	for word in line.split():
-		corpus.append(word)
+def create_post(corpus):
+	output = ''
+	sentence = ''
 
-# print len(corpus)
-# print position
-
-fullString = ''
-
-for i in range(0,1):
-	newString = ''
-	full_stop = False
 	position = get_start_pos()
 
-	while len(fullString) < 1400 - len(corpus[position]):
-		newString += corpus[position]
+	while len(output) < OUTPUT_LENGTH - len(sentence):
 
-		if corpus[position].endswith(('.','?','!','.\"','!\"','?\"')) and corpus[position+1].istitle() and not corpus[position].endswith(('Mr.','Mrs.','Dr.','Ms.')):
-			fullString += newString
-			if random.randint(1,4) == 1:
-				fullString += '\n\n'
-			newString = ''
+		new_paragraph = False
+		sentence += corpus[position]
 
-		if random.randint(1, 5) == 1:
-			word_to_look_for = corpus[position+1]
+		if (corpus[position].endswith(('.','?','!','.\"','!\"','?\"'))
+				and corpus[position + 1].istitle()
+				and not corpus[position].endswith(('Mr.','Mrs.','Dr.','Ms.'))):
+			output += sentence
+			if random.random() <= PARAGRAPH_BREAK_PROB:
+				output += '\n\n'
+				new_paragraph = True
+			sentence = ''
+
+		if random.random() <= JUMP_PROB:
+			word_to_look_for = corpus[position + 1]
 			position = get_word_pos(word_to_look_for)
 		else:
 			position += 1
+
 		if not position or position >= len(corpus):
-			newString += word_to_look_for + '. '
+			sentence += word_to_look_for + '. '
 			break
 		else:
-			newString += ' '
+			if not new_paragraph:
+				sentence += ' '
+	
+	return output
 
-#	fullString += newString	+ "\n"
 
-print fullString
+def post_title():
+	most_recent_post = client.posts(TUMBLR_NAME, limit=1)
+	most_recent_title = most_recent_post['posts'][0]['title']
+	chapter = int(re.search(r'[0-9]*$', most_recent_title).group(0))
+	if chapter:
+		chapter = str(chapter + 1)
+		return "Chapter " + chapter
 
-post_title = None
-most_recent_post = client.posts(tumblr_name, limit=1)
-most_recent_title = most_recent_post['posts'][0]['title']
-chapter = re.search(r'[0-9]*$', most_recent_title).group(0)
-if chapter:
-	chapter = str(int(chapter) + 1)
-	post_title = "Chapter " + chapter
 
-client.create_text(tumblr_name, state="published", title=post_title, body=fullString)
+corpus = assemble_corpus(DATABASE)
+
+output = create_post(corpus)
+print output
+
+client.create_text(TUMBLR_NAME, state="published", title=post_title(),
+	body=output)
