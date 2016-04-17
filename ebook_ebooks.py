@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 # coding: utf-8
 
-import random
+import random, re
 import pytumblr, json
 from tumblrsecrets import tumblr_auth, database, tumblr_name
 
@@ -47,10 +47,17 @@ fullString = ''
 
 for i in range(0,1):
 	newString = ''
+	full_stop = False
 	position = get_start_pos()
 
-	while len(newString) < 1400 - len(corpus[position]):
+	while len(fullString) < 1400 - len(corpus[position]):
 		newString += corpus[position]
+
+		if corpus[position].endswith(('.','?','!','.\"','!\"','?\"')) and corpus[position+1].istitle() and not corpus[position].endswith(('Mr.','Mrs.','Dr.','Ms.')):
+			fullString += newString
+			if random.randint(1,4) == 1:
+				fullString += '\n\n'
+			newString = ''
 
 		if random.randint(1, 5) == 1:
 			word_to_look_for = corpus[position+1]
@@ -63,7 +70,16 @@ for i in range(0,1):
 		else:
 			newString += ' '
 
-	fullString += newString	+ "\n"
+#	fullString += newString	+ "\n"
 
 print fullString
-client.create_text(tumblr_name, state="published", body=fullString)
+
+post_title = None
+most_recent_post = client.posts(tumblr_name, limit=1)
+most_recent_title = most_recent_post['posts'][0]['title']
+chapter = re.search(r'[0-9]*$', most_recent_title).group(0)
+if chapter:
+	chapter = str(int(chapter) + 1)
+	post_title = "Chapter " + chapter
+
+client.create_text(tumblr_name, state="published", title=post_title, body=fullString)
