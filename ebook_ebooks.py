@@ -2,8 +2,14 @@
 # coding: utf-8
 
 import random
+import pytumblr, json
+from tumblrsecrets import tumblr_auth, database, tumblr_name
 
-source_file = open("gatsby.txt","r")
+client = pytumblr.TumblrRestClient(
+	tumblr_auth[0], tumblr_auth[1], tumblr_auth[2], tumblr_auth[3]
+)
+
+source_file = open(database)
 source = source_file.readlines()
 source_file.close()
 
@@ -39,7 +45,7 @@ for line in source:
 
 fullString = ''
 
-for i in range(1,10):
+for i in range(0,1):
 	newString = ''
 	position = get_start_pos()
 
@@ -60,3 +66,4 @@ for i in range(1,10):
 	fullString += newString	+ "\n"
 
 print fullString
+client.create_text(tumblr_name, state="published", body=fullString)
