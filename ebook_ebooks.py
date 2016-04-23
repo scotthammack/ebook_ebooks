@@ -67,23 +67,26 @@ def finish_sentence(text, add_period):
 #	text += ' '
 	return text
 
-def finish_para(text):
-	open_quotes = False
-	for character in text:
-		if character is '"':
-			if not open_quotes:
-				open_quotes = True
-			else:
-				open_quotes = False
-	if open_quotes:
-			if text.endswith('"'):
-				text = '"' + text
-			else:
-				text += '"'
-	else:
-		if text.endswith('"'):
-			text = text[:-1]
-	return text + '\n\n'
+def finish_para(initial_text):
+	currently_unclosed = False
+	last_quote_pos = 0
+	text = list(initial_text)
+	for i in range(0, len(initial_text)):
+		if text[i] is '"':
+			if not text[i-1] or text[i-1] is ' ' or text[i-1] is '\n':	# opening quote
+				if currently_unclosed:
+					# insert a quote somewhere before here to turn this into a closing quote
+					current_unclosed = False
+				else:
+					currently_unclosed = True
+		#	elif i >= len(text) or not text[i+1] or text[i+1] is ' ' or text[i+1] is '\n':	# closing quote
+		#		if currently_unclosed:
+	#				currently_unclosed = False
+					# remove this char?
+			last_quote_pos = i
+	if currently_unclosed:
+		text = "".join(text) + '"'
+	return "".join(text) + '\n\n'
 
 def create_post(corpus):
 	output = ''
