@@ -60,16 +60,30 @@ def count_char(text, target):
 def finish_sentence(text, add_period):
 	open_parens = count_char(text, '(')
 	closed_parens = count_char(text, ')')
-#	quotes = count_char(text, '"')
 	for i in range(0, (open_parens - closed_parens)):
 		text += ')'
 	if add_period:
 		text += '.'
-#	if quotes % 2:
-#		text += '"'
-	text += ' '
+#	text += ' '
 	return text
 
+def finish_para(text):
+	open_quotes = False
+	for character in text:
+		if character is '"':
+			if not open_quotes:
+				open_quotes = True
+			else:
+				open_quotes = False
+	if open_quotes:
+			if text.endswith('"'):
+				text = '"' + text
+			else:
+				text += '"'
+	else:
+		if text.endswith('"'):
+			text = text[:-1]
+	return text + '\n\n'
 
 def create_post(corpus):
 	output = ''
@@ -87,7 +101,7 @@ def create_post(corpus):
 				and not corpus[position].endswith(('Mr.','Mrs.','Dr.','Ms.'))):
 			output += finish_sentence(sentence, False)
 			if random.random() <= PARAGRAPH_BREAK_PROB:
-				output += '\n\n'
+				output = finish_para(output)
 				new_paragraph = True
 			sentence = ''
 
@@ -99,6 +113,7 @@ def create_post(corpus):
 
 		if not position or position >= len(corpus):
 			sentence = finish_sentence(sentence + word_to_look_for, True)
+			sentence = finish_para(sentence)
 			#sentence += word_to_look_for + '. '
 			break
 		else:
@@ -122,5 +137,5 @@ corpus = assemble_corpus(DATABASE)
 output = create_post(corpus)
 print output
 
-client.create_text(TUMBLR_NAME, state="published", title=post_title(),
-	body=output)
+#client.create_text(TUMBLR_NAME, state="published", title=post_title(),
+#	body=output)
