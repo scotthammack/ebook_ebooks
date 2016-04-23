@@ -137,5 +137,5 @@ corpus = assemble_corpus(DATABASE)
 output = create_post(corpus)
 print output
 
-#client.create_text(TUMBLR_NAME, state="published", title=post_title(),
-#	body=output)
+client.create_text(TUMBLR_NAME, state="published", title=post_title(),
+	body=output)
