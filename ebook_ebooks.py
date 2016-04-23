@@ -50,6 +50,27 @@ def get_word_pos(target):
 	else:
 		return None
 
+def count_char(text, target):
+	count = 0
+	for character in text:
+		if character is target:
+			count += 1
+	return count
+
+def finish_sentence(text, add_period):
+	open_parens = count_char(text, '(')
+	closed_parens = count_char(text, ')')
+#	quotes = count_char(text, '"')
+	for i in range(0, (open_parens - closed_parens)):
+		text += ')'
+	if add_period:
+		text += '.'
+#	if quotes % 2:
+#		text += '"'
+	text += ' '
+	return text
+
+
 def create_post(corpus):
 	output = ''
 	sentence = ''
@@ -64,7 +85,7 @@ def create_post(corpus):
 		if (corpus[position].endswith(('.','?','!','.\"','!\"','?\"'))
 				and corpus[position + 1].istitle()
 				and not corpus[position].endswith(('Mr.','Mrs.','Dr.','Ms.'))):
-			output += sentence
+			output += finish_sentence(sentence, False)
 			if random.random() <= PARAGRAPH_BREAK_PROB:
 				output += '\n\n'
 				new_paragraph = True
@@ -77,7 +98,8 @@ def create_post(corpus):
 			position += 1
 
 		if not position or position >= len(corpus):
-			sentence += word_to_look_for + '. '
+			sentence = finish_sentence(sentence + word_to_look_for, True)
+			#sentence += word_to_look_for + '. '
 			break
 		else:
 			if not new_paragraph:
