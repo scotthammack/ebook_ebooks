@@ -80,10 +80,12 @@ def finish_sentence(text, add_period):
 
 def finish_para(text):
 	text = text.strip()
-	if count_char(text, '"') % 2 and not text.endswith('"'):
-		quote_pos = text.rfind('"')
-		if quote_pos == 0 or (quote_pos > 1 and text[quote_pos - 1] is ' '):
-			text += '"'
+	last_quote_pos = text.rfind('"')
+	first_quote_pos = text.find('"')
+	if last_quote_pos == 0 or text[last_quote_pos - 1] is ' ':
+		text += '"'
+	elif first_quote_pos == len(text) -1 or text[first_quote_pos + 1] is ' ':
+		text = '"' + text
 	open_parens = count_char(text, '(')
 	closed_parens = count_char(text, ')')
 	for i in range(0, (open_parens - closed_parens)):
@@ -155,5 +157,5 @@ corpus = assemble_corpus(DATABASE)
 output = create_post(corpus)
 print output
 
-client.create_text(TUMBLR_NAME, state="published", title=post_title(),
-	body=output)
+#client.create_text(TUMBLR_NAME, state="published", title=post_title(),
+#	body=output)
