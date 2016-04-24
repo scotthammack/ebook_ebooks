@@ -11,11 +11,13 @@ from tumblr_secrets import TUMBLR_AUTH, DATABASE, TUMBLR_NAME
 OUTPUT_LENGTH = 1400
 PARAGRAPH_BREAK_PROB = 0.25
 JUMP_PROB = 0.2
+END_PUNCT = re.compile('[!?.]"?$')
 
 client = pytumblr.TumblrRestClient(
 	TUMBLR_AUTH[0], TUMBLR_AUTH[1], TUMBLR_AUTH[2], TUMBLR_AUTH[3]
 )
 
+output = ''
 
 def assemble_corpus(database):
 	source_file = open(database,'r')
@@ -29,11 +31,20 @@ def assemble_corpus(database):
 			corpus.append(word)
 	return corpus
 
+titles = ('Mr.', 'Mrs.', 'Dr.', 'Ms.')
+
+def start_of_sentence(pos):
+	return corpus[pos].istitle() and not corpus[pos - 1].endswith(titles) and re.search(END_PUNCT, corpus[pos - 1])
+
+def end_of_sentence(pos):
+	return corpus[pos + 1].istitle() and not corpus[pos].endswith(titles) and re.search(END_PUNCT, corpus[pos])
+	#return re.search(END_PUNCT, corpus[pos]) and corpus[pos + 1].istitle() and not corpus[pos].endswith(titles)
+
 
 def get_start_pos():
 	while True:
 		pos = random.randint(0, len(corpus) - 1)
-		if corpus[pos].istitle():
+		if start_of_sentence(pos):
 			return pos
 
 def get_word_pos(target):
@@ -67,63 +78,67 @@ def finish_sentence(text, add_period):
 #	text += ' '
 	return text
 
-def finish_para(initial_text):
-	currently_unclosed = False
-	last_quote_pos = 0
-	text = list(initial_text)
-	for i in range(0, len(initial_text)):
-		if text[i] is '"':
-			if not text[i-1] or text[i-1] is ' ' or text[i-1] is '\n':	# opening quote
-				if currently_unclosed:
-					# insert a quote somewhere before here to turn this into a closing quote
-					current_unclosed = False
-				else:
-					currently_unclosed = True
-		#	elif i >= len(text) or not text[i+1] or text[i+1] is ' ' or text[i+1] is '\n':	# closing quote
-		#		if currently_unclosed:
-	#				currently_unclosed = False
-					# remove this char?
-			last_quote_pos = i
-	if currently_unclosed:
-		text = "".join(text) + '"'
-	return "".join(text) + '\n\n'
+def finish_para(text):
+	text = text.strip()
+	if count_char(text, '"') % 2 and not text.endswith('"'):
+		quote_pos = text.rfind('"')
+		if quote_pos == 0 or (quote_pos > 1 and text[quote_pos - 1] is ' '):
+			text += '"'
+	open_parens = count_char(text, '(')
+	closed_parens = count_char(text, ')')
+	for i in range(0, (open_parens - closed_parens)):
+		text += ')'
+	text += '\n\n'
+	return text
+
+def create_sentence(pos):
+	sentence = ''
+
+	while not end_of_sentence(pos) and len(output) <= OUTPUT_LENGTH - len(corpus[pos]):
+		sentence += corpus[pos] + ' '
+		if random.random() <= JUMP_PROB:
+			word_to_look_for = corpus[pos + 1]
+			pos = get_word_pos(word_to_look_for)
+		else:
+			pos += 1
+	
+	return sentence + corpus[pos]
+
+def create_para(pos):
+	para = ''
+
+	while not random.random() <= PARAGRAPH_BREAK_PROB and len(output) < OUTPUT_LENGTH - len(para) or len(para) < 1:
+		para += create_sentence(pos) + ' '
+		pos = get_start_pos()
+	
+	para = finish_para(para)
+
+	return para
+
 
 def create_post(corpus):
 	output = ''
-	sentence = ''
 
-	position = get_start_pos()
+	while len(output) <= OUTPUT_LENGTH:
 
-	while len(output) < OUTPUT_LENGTH - len(sentence):
+		pos = get_start_pos()
+		new_para = create_para(pos)
 
-		new_paragraph = False
-		sentence += corpus[position]
-
-		if (corpus[position].endswith(('.','?','!','.\"','!\"','?\"'))
-				and corpus[position + 1].istitle()
-				and not corpus[position].endswith(('Mr.','Mrs.','Dr.','Ms.'))):
-			output += finish_sentence(sentence, False)
-			if random.random() <= PARAGRAPH_BREAK_PROB:
-				output = finish_para(output)
-				new_paragraph = True
-			sentence = ''
-
-		if random.random() <= JUMP_PROB:
-			word_to_look_for = corpus[position + 1]
-			position = get_word_pos(word_to_look_for)
+		if len(output) + len(new_para) <= OUTPUT_LENGTH:
+			output += new_para
 		else:
-			position += 1
-
-		if not position or position >= len(corpus):
-			sentence = finish_sentence(sentence + word_to_look_for, True)
-			sentence = finish_para(sentence)
-			#sentence += word_to_look_for + '. '
 			break
-		else:
-			if not new_paragraph:
-				sentence += ' '
+
+#		if not position or position >= len(corpus):
+#			sentence = finish_sentence(sentence + word_to_look_for, True)
+#			sentence = finish_para(sentence)
+			#sentence += word_to_look_for + '. '
+#			break
+#		else:
+#			if not new_paragraph:
+#				sentence += ' '
 	
-	return output
+	return output.strip()
 
 
 def post_title():
