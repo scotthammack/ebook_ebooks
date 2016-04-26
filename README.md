@@ -15,19 +15,18 @@ For posting to Tumblr, ebook\_ebooks looks for a file called
 tumblr\_secrets.py, which should contain your Tumblr keys and blog
 name, as well as the filename you want to use for the corpus. A sample
 tumblr\_secrets.py:
-`
-#!/usr/local/bin/python
-# coding: utf-8
 
-TUMBLR_AUTH = [ 'consumer key goes here',
-  'consumer secret goes here',
-  'access key goes here',
-  'access secret goes here'
-]
-
-TUMBLR_NAME = 'ebook-ebooks'
-DATABASE = 'corpus.txt'
-`
+	#!/usr/local/bin/python
+	# coding: utf-8
+	
+	TUMBLR_AUTH = [ 'consumer key goes here',
+	  'consumer secret goes here',
+	  'access key goes here',
+	  'access secret goes here'
+	]
+	
+	TUMBLR_NAME = 'ebook-ebooks'
+	DATABASE = 'corpus.txt'
 
 ## Customization
 The following constants may be adjusted to fine-tune the output.
