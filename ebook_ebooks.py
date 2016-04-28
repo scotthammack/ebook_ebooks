@@ -12,6 +12,7 @@ OUTPUT_LENGTH = 1400
 PARAGRAPH_BREAK_PROB = 0.25
 JUMP_PROB = 0.2
 END_PUNCT = re.compile('[!?.]"?$')
+TITLES = ('Mr.', 'Mrs.', 'Dr.', 'Ms.')
 
 client = pytumblr.TumblrRestClient(
 	TUMBLR_AUTH[0], TUMBLR_AUTH[1], TUMBLR_AUTH[2], TUMBLR_AUTH[3]
@@ -31,14 +32,13 @@ def assemble_corpus(database):
 			corpus.append(word)
 	return corpus
 
-titles = ('Mr.', 'Mrs.', 'Dr.', 'Ms.')
 
 def start_of_sentence(pos):
-	return corpus[pos].istitle() and not corpus[pos - 1].endswith(titles) and re.search(END_PUNCT, corpus[pos - 1])
+	return corpus[pos].istitle() and not corpus[pos - 1].endswith(TITLES) and re.search(END_PUNCT, corpus[pos - 1])
 
 def end_of_sentence(pos):
-	return corpus[pos + 1].istitle() and not corpus[pos].endswith(titles) and re.search(END_PUNCT, corpus[pos])
-	#return re.search(END_PUNCT, corpus[pos]) and corpus[pos + 1].istitle() and not corpus[pos].endswith(titles)
+	return corpus[pos + 1].istitle() and not corpus[pos].endswith(TITLES) and re.search(END_PUNCT, corpus[pos])
+	#return re.search(END_PUNCT, corpus[pos]) and corpus[pos + 1].istitle() and not corpus[pos].endswith(TITLES)
 
 
 def get_start_pos():
@@ -148,7 +148,7 @@ def post_title():
 	most_recent_title = most_recent_post['posts'][0]['title']
 	chapter = int(re.search(r'[0-9]*$', most_recent_title).group(0))
 	if chapter:
-		chapter = str(chapter + 1)
+		chapter = format(chapter + 1, ',')
 		return "Chapter " + chapter
 
 

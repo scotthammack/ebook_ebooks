@@ -50,6 +50,10 @@ script should consider to mark the end of a sentence. It defaults to an
 exclamation mark, question mark, or period, optionally followed by a
 quotation mark.
 
+TITLES is a tuple containing strings that should not necessarily be
+considered to start or end a sentence even if they contain punctuation or
+capitalization that would otherwise suggest that.
+
 ## Contact
 The author of ebook\_ebooks is me, Scott Hammack. I can be reached by
 email at <shammack@protonmail.com> or on Twitter as
